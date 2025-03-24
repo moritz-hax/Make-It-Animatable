@@ -407,7 +407,7 @@ def get_kinematic_tree(bone_path: str, bone_idx_dict: dict[str, int]):
     return kinematic_tree
 
 
-TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/Mixamo/bones.fbx"))
+TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/Mixamo/bones.fbx"))
 KINEMATIC_TREE = get_kinematic_tree(TEMPLATE_PATH, BONES_IDX_DICT)
 assert len(KINEMATIC_TREE) == len(MIXAMO_JOINTS)
 
@@ -1222,7 +1222,7 @@ if __name__ == "__main__":
 
     fix_random()
     dataset = MixamoDataset(
-        "../data/Mixamo",
+        "../../../data/Mixamo",
         sample_frames=1,
         sample_points=32768,
         hands_resample_ratio=0.5,
