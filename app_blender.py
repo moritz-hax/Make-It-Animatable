@@ -115,7 +115,7 @@ def main(args: argparse.Namespace):
             armature_obj.matrix_world = matrix_world
         blender_utils.remove_empty()
         blender_utils.update()
-        if pose is not None:
+        if pose is not None and args.apply_pose:
             pose_inv = pose
             if not args.pose_local:
                 pose_inv[:, :3, 3] /= scaling
