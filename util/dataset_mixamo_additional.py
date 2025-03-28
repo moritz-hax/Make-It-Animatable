@@ -12,6 +12,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from util import dataset_mixamo
 from util.dataset_mixamo import PoseData, get_connected_idx_pairs, get_kinematic_tree
+from util.paths import PATH_DATA, path_join
 
 ADDITIONAL_JOINTS = (
     "mixamorig:LRabbitEar2",
@@ -40,7 +41,7 @@ CONNECTED_BONES.append(
 CONNECTED_BONES = tuple(CONNECTED_BONES)
 CONNECTED_IDX_PAIRS = get_connected_idx_pairs(CONNECTED_BONES, BONES_IDX_DICT)
 
-TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/Mixamo/bones_vroid.fbx"))
+TEMPLATE_PATH = path_join(PATH_DATA, "Mixamo/bones_vroid.fbx")
 KINEMATIC_TREE = get_kinematic_tree(TEMPLATE_PATH, BONES_IDX_DICT)
 assert len(KINEMATIC_TREE) == len(MIXAMO_JOINTS)
 
@@ -90,7 +91,7 @@ if __name__ == "__main__":
 
     fix_random()
     dataset = MixamoDataset(
-        "../../../data/Mixamo",
+        path_join(PATH_DATA, "Mixamo"),
         sample_frames=1,
         sample_points=32768,
         hands_resample_ratio=0.5,

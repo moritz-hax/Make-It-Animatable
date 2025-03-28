@@ -2,6 +2,7 @@
 
 import math
 import os
+import shutil
 
 import bpy
 import numpy as np
@@ -10,6 +11,8 @@ from bpy.types import Action, Armature, Context, Mesh, Object
 # isort: split
 import bmesh
 import mathutils
+
+from util.paths import path_exists
 
 USE_WORLD_COORDINATES = False
 
@@ -607,6 +610,40 @@ def load_mixamo_anim(char_file: str, anim_file: str, do_retarget=False, inplace=
         mesh_quads2tris(char_objs)
     return char_objs
 
+
+def _check_blender_installed(blender_path: str | None = None) -> str:
+    """Verify Blender installation and return executable path.
+
+    Args:
+        blender_path: Optional explicit path to Blender executable
+
+    Returns:
+        Path to Blender executable
+
+    Raises:
+        RuntimeError: If Blender is not found
+
+    """
+    if blender_path and path_exists(blender_path):
+        print(f"Using specified Blender: {blender_path}")
+        return blender_path
+
+    # Try to find Blender in system PATH
+    blender_bin = shutil.which("blender")
+    if blender_bin:
+        print(f"Found Blender: {blender_bin}")
+        return blender_bin
+
+    error_msg = (
+        "Blender not found! Please either:\n"
+        "1. Install Blender and add to PATH\n"
+        "2. Provide explicit path to Blender executable\n"
+        "Installation: 'sudo snap install blender --classic' (Linux)\n"
+        "or download from https://www.blender.org/download/"
+    )
+    print(error_msg)
+    msg = "Blender installation not found"
+    raise RuntimeError(msg)
 
 if __name__ == "__main__":
     bpy.ops.wm.read_factory_settings(use_empty=False)
