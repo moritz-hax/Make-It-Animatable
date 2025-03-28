@@ -10,8 +10,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from util import blender_utils, dataset_mixamo
-from util.blender_utils import bpy as bpy
+from util import dataset_mixamo
 from util.dataset_mixamo import PoseData, get_connected_idx_pairs, get_kinematic_tree
 
 ADDITIONAL_JOINTS = (
@@ -69,6 +68,7 @@ class MixamoDataset(dataset_mixamo.MixamoDataset):
             self.load_fn = self.load_from_animated
 
     def load_from_animated(self, char_file: str, anim_file: str, *args, **xargs):
+        from util import blender_utils
         get_base_name = lambda s: os.path.splitext(os.path.basename(s))[0]
         animated_filename = f"{get_base_name(char_file)}-{get_base_name(anim_file)}.fbx"
         animated_filepath = os.path.abspath(os.path.join(self.animated_dir, animated_filename))

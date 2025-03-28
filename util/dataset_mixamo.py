@@ -2,12 +2,15 @@ import os
 import random
 import sys
 import warnings
+import json
+import subprocess
 from collections import OrderedDict
 from dataclasses import dataclass
 from functools import cached_property, lru_cache
 from glob import glob
+from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Iterator
+from typing import Any, Callable, Iterator
 
 try:
     from typing import Self
@@ -23,8 +26,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from util import blender_utils
-from util.blender_utils import bpy as bpy
+from tools.people.smpl.blender_helper import _check_blender_installed
 from util.utils import HiddenPrints, apply_transform, decompose_transform, quat_to_matrix, sample_mesh
 
 MIXAMO_PREFIX = "mixamorig:"
@@ -377,34 +379,67 @@ class Joint:
         ]
 
 
-def build_skeleton(armature_obj: blender_utils.Object, bones_idx_dict: dict[str, int]):
+def build_skeleton_from_data(bones_data: dict, bones_idx_dict: dict[str, int]):
     template_joints = tuple(bones_idx_dict.keys())
 
-    def get_children(bone, parent=None):
+    def get_children(bone_name: str, parent=None):
+        if bone_name not in bones_data or bone_name not in bones_idx_dict:
+            return None
+        
+        bone_info = bones_data[bone_name]
         joint = Joint(
-            bone.name, index=bones_idx_dict[bone.name], parent=parent, children=[], template_joints=template_joints
+            bone_name,
+            index=bones_idx_dict[bone_name],
+            parent=parent,
+            children=[],
+            template_joints=template_joints
         )
-        children = [b for b in bone.children if b.name in bones_idx_dict]
-        if not children:
-            return joint
-        for child in bone.children:
-            joint.children.append(get_children(child, parent=joint))
+        
+        for child_name in bone_info['children']:
+            child_joint = get_children(child_name, parent=joint)
+            if child_joint:
+                joint.children.append(child_joint)
         return joint
 
-    hips_bone = armature_obj.data.bones[f"{MIXAMO_PREFIX}Hips"]
-    hips = get_children(hips_bone)
+    hips_bone_name = f"{MIXAMO_PREFIX}Hips"
+    if hips_bone_name not in bones_data:
+        msg = f"Root bone {hips_bone_name} not found in skeleton data"
+        raise ValueError(msg)
+        
+    hips = get_children(hips_bone_name)
     return hips
 
 
 def get_kinematic_tree(bone_path: str, bone_idx_dict: dict[str, int]):
     assert os.path.isfile(bone_path), f"File not found: {bone_path}"
-    with HiddenPrints():
-        blender_utils.reset()
-        kinematic_tree = build_skeleton(
-            blender_utils.get_armature_obj(blender_utils.load_file(bone_path)), bone_idx_dict
-        )
-        blender_utils.reset()
-    return kinematic_tree
+    
+    # Get project root by going up from current file
+    current_file = Path(__file__).resolve()
+    project_root = current_file.parents[3]  # util/dataset_mixamo -> util -> dependencies -> root
+    blender_script = project_root / "dependencies" / "make_it_animatable" / "app_blender.py"
+    
+    # Call Blender to get skeleton data
+    cmd = [
+        _check_blender_installed(None),
+        "--background",
+        "--python",
+        str(blender_script),
+        "--",
+        "--task", "skeleton",
+        "--get_skeleton",
+        "--input_path", bone_path,
+    ]
+    
+    try:
+        output = subprocess.check_output(cmd, text=True)
+        output = output.split("Skeleton data:\n")[1]
+        output = output.split("\nSkeleton data end")[0]
+        bones_data = json.loads(output.strip())
+        kinematic_tree = build_skeleton_from_data(bones_data, bone_idx_dict)
+        return kinematic_tree
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+        msg = f"Error getting skeleton data: {str(e)}"
+        raise RuntimeError(msg)
 
 
 TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/Mixamo/bones.fbx"))
@@ -783,7 +818,7 @@ def animate_char(
     char_path: str,
     anim_path: str,
     template_dict: dict[str, int],
-    load_fn: Callable[..., list[blender_utils.Object]],
+    load_fn: Callable[..., list[Any]],
     frame_list: int | list[int | None] = None,
     retarget=False,
     inplace=False,
