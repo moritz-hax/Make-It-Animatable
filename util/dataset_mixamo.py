@@ -26,8 +26,8 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from tools.people.smpl.blender_helper import _check_blender_installed
 from util.utils import HiddenPrints, apply_transform, decompose_transform, quat_to_matrix, sample_mesh
+from util.paths import PATH_DATA, path_join, get_blender_path
 
 MIXAMO_PREFIX = "mixamorig:"
 MIXAMO_JOINTS = (
@@ -420,7 +420,7 @@ def get_kinematic_tree(bone_path: str, bone_idx_dict: dict[str, int]):
     
     # Call Blender to get skeleton data
     cmd = [
-        _check_blender_installed(None),
+        get_blender_path(None),
         "--background",
         "--python",
         str(blender_script),
@@ -442,7 +442,7 @@ def get_kinematic_tree(bone_path: str, bone_idx_dict: dict[str, int]):
         raise RuntimeError(msg)
 
 
-TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/Mixamo/bones.fbx"))
+TEMPLATE_PATH = path_join(PATH_DATA, "Mixamo/bones.fbx")
 KINEMATIC_TREE = get_kinematic_tree(TEMPLATE_PATH, BONES_IDX_DICT)
 assert len(KINEMATIC_TREE) == len(MIXAMO_JOINTS)
 
@@ -1257,7 +1257,7 @@ if __name__ == "__main__":
 
     fix_random()
     dataset = MixamoDataset(
-        "../../../data/Mixamo",
+        path_join(PATH_DATA, "Mixamo"),
         sample_frames=1,
         sample_points=32768,
         hands_resample_ratio=0.5,
