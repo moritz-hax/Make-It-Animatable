@@ -416,7 +416,6 @@ class PCAE(nn.Module):
         if adapt:
             model_state_dict = self.adapt_ckpt(model_state_dict)
         self.load_state_dict(model_state_dict, strict=strict)
-        print(f"Loaded model from {pth_path}")
         return self
 
     def load_base(self, pth_path: str):

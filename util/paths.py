@@ -69,7 +69,6 @@ def get_blender_path(blender_path: str | None = None) -> str:
     # Try to find Blender in system PATH
     blender_bin = shutil.which("blender")
     if blender_bin:
-        print(f"Found Blender: {blender_bin}")
         return blender_bin
 
     error_msg = (
