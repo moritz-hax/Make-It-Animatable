@@ -27,7 +27,8 @@ from tqdm import tqdm
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from util.utils import HiddenPrints, apply_transform, decompose_transform, quat_to_matrix, sample_mesh
-from util.paths import PATH_DATA, path_join, get_blender_path
+from util.paths import path_join, get_blender_path
+from tools.system.constants import PATH_DATA
 
 MIXAMO_PREFIX = "mixamorig:"
 MIXAMO_JOINTS = (

@@ -48,8 +48,6 @@ def path_cwd() -> str:
     """Get the current working directory."""
     return str(Path.cwd())
 
-PATH_DATA = path_join(path_cwd(), "data")
-
 
 def get_blender_path(blender_path: str | None = None) -> str:
     """Verify Blender installation and return executable path.

@@ -12,7 +12,8 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from util import dataset_mixamo
 from util.dataset_mixamo import PoseData, get_connected_idx_pairs, get_kinematic_tree
-from util.paths import PATH_DATA, path_join
+from util.paths import path_join
+from tools.system.constants import PATH_DATA
 
 ADDITIONAL_JOINTS = (
     "mixamorig:LRabbitEar2",
