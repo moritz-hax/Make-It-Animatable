@@ -13,7 +13,7 @@ if __name__ == "__main__":
 from util import dataset_mixamo
 from util.dataset_mixamo import PoseData, get_connected_idx_pairs, get_kinematic_tree
 from util.paths import path_join
-from tools.system.constants import PATH_DATA
+from constants import PATH_DATA
 
 ADDITIONAL_JOINTS = (
     "mixamorig:LRabbitEar2",
