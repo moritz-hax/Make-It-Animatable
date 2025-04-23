@@ -96,15 +96,43 @@ def delete_object_and_mesh(obj: bpy.types.Object) -> None:
 
 
 def apply_transformation_and_export(target_armature: bpy.types.Object, target_fbx_path: str) -> None:
-    """Apply the pose and export the transformed model."""
+    """Apply pose, object transforms, and export a world-space baked FBX."""
+    # Ensure object mode
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.select_all(action='DESELECT')
+
+    # Select and apply pose to armature
     bpy.context.view_layer.objects.active = target_armature
+    target_armature.select_set(True)
     bpy.ops.object.mode_set(mode="POSE")
     bpy.ops.pose.armature_apply()
     bpy.ops.object.mode_set(mode="OBJECT")
+
+    # Apply transforms to armature
+    bpy.context.view_layer.objects.active = target_armature
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # Select all mesh children of the armature and apply transforms
+    for child in target_armature.children:
+        if child.type == 'MESH':
+            bpy.context.view_layer.objects.active = child
+            child.select_set(True)
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # Re-select armature for export
+    target_armature.select_set(True)
+    bpy.context.view_layer.objects.active = target_armature
+
+    # Export
     bpy.ops.export_scene.fbx(
         filepath=target_fbx_path,
+        use_selection=True,
         apply_unit_scale=True,
         global_scale=1.0,
+        bake_space_transform=True,
+        apply_scale_options='FBX_SCALE_UNITS',
+        object_types={'ARMATURE', 'MESH'},
+        mesh_smooth_type='FACE',
     )
 
 
