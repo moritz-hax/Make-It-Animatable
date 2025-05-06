@@ -133,6 +133,8 @@ def apply_transformation_and_export(target_armature: bpy.types.Object, target_fb
         apply_scale_options='FBX_SCALE_UNITS',
         object_types={'ARMATURE', 'MESH'},
         mesh_smooth_type='FACE',
+        path_mode='COPY',       # write textures next to the FBX…
+        embed_textures=True,    # …or actually embed them into the FBX
     )
 
 
