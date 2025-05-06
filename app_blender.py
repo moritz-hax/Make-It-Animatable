@@ -43,19 +43,23 @@ def clear_scene() -> None:
     bpy.ops.object.delete()
 
 
-def load_fbx(filepath: str) -> bpy.types.Object | None:
+def load_fbx(filepath: str) -> tuple[bpy.types.Object | None, bpy.types.Object | None]:
     """Import an FBX file and return the armature."""
     bpy.ops.import_scene.fbx(filepath=filepath)
+    armature = None
+    mesh = None
     for obj in bpy.context.selected_objects:
         if obj.type == "ARMATURE":
-            return obj
-    return None  # No armature found
+            armature = obj
+        elif obj.type == "MESH":
+            mesh = obj
+    return armature, mesh
 
 
 def get_skeleton_data(fbx_path: str) -> dict:
     """Extract skeleton data from an FBX file and return it in a serializable format."""
     clear_scene()
-    armature_obj = load_fbx(fbx_path)
+    armature_obj, _ = load_fbx(fbx_path)
     if not armature_obj:
         msg = f"No armature found in {fbx_path}"
         raise ValueError(msg)
@@ -138,17 +142,64 @@ def apply_transformation_and_export(target_armature: bpy.types.Object, target_fb
     )
 
 
+def export_to_obj_no_armature(
+    mesh_obj: bpy.types.Object,
+    output_path: str,
+) -> None:
+    """Export only the mesh to OBJ format without armature.
+
+    Args:
+        mesh_obj: The Blender mesh object to export
+        output_path: Path where the OBJ file will be saved
+
+    Note:
+        This function temporarily unparents the mesh from its armature (if any)
+        to export just the mesh geometry.
+
+    """
+    # Store original parent and transform
+    original_parent = mesh_obj.parent
+    original_matrix = mesh_obj.matrix_world.copy()
+
+    # Temporarily clear parent while keeping transform
+    if original_parent:
+        mesh_obj.parent = None
+        mesh_obj.matrix_world = original_matrix
+
+    # Select only the mesh
+    bpy.ops.object.select_all(action="DESELECT")
+    mesh_obj.select_set(True)  # noqa: FBT003
+    bpy.context.view_layer.objects.active = mesh_obj
+
+    # Export to OBJ
+    bpy.ops.wm.obj_export(
+        filepath=output_path,
+        export_selected_objects=True,
+        export_uv=True,
+        export_normals=True,
+        export_colors=True,
+        export_materials=True,
+        # forward_axis="Y",
+        # up_axis="Z",
+    )
+
+    # Restore original parent if there was one
+    if original_parent:
+        mesh_obj.parent = original_parent
+        mesh_obj.matrix_world = original_matrix
+
+
 def apply_pose(source_fbx: str, target_fbx: str, output_fbx: str) -> None:
     """Transfer a pose from a source FBX to a target FBX and export the result."""
     # First clear scene and load source armature
     clear_scene()
-    source_armature = load_fbx(source_fbx)
+    source_armature, _ = load_fbx(source_fbx)
     if not source_armature:
         msg = f"No armature found in source FBX: {source_fbx}"
         raise ValueError(msg)
 
     # Then load target armature
-    target_armature = load_fbx(target_fbx)
+    target_armature, _ = load_fbx(target_fbx)
     if not target_armature:
         msg = f"No armature found in target FBX: {target_fbx}"
         raise ValueError(msg)
@@ -164,6 +215,9 @@ def apply_pose(source_fbx: str, target_fbx: str, output_fbx: str) -> None:
 
     # Clean up
     clear_scene()
+    _, source_mesh = load_fbx(source_fbx)
+    obj_path = output_fbx.replace(".fbx", ".obj")
+    export_to_obj_no_armature(source_mesh, obj_path)
 
     print(f"Pose transfer completed! Saved to {output_fbx}")
 
